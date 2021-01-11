@@ -93,12 +93,18 @@ abstract class CloudFlareAPI {
    */
   public function __construct($apikey, $email, MockHandler $mock_handler = NULL) {
     $this->apikey = $apikey;
+
     $this->email = $email;
     $headers = [
-      'X-Auth-Key' => $apikey,
-      'X-Auth-Email' => $email,
       'Content-Type' => 'application/json',
     ];
+    if (strlen($apikey) === self::API_KEY_LENGTH) {
+      $headers['Authorization'] = 'Bearer ' . $apikey;
+    }
+    else {
+      $headers['X-Auth-Key'] = $apikey;
+      $headers['X-Auth-Email'] = $email;
+    }
 
     $client_params = [
       'base_uri' => self::API_ENDPOINT_BASE,
@@ -144,7 +150,7 @@ abstract class CloudFlareAPI {
     // This check seems superfluous.  However, the Api only returns a http 400
     // code. This proactive check gives us more information.
     $api_key_length = strlen($this->apikey);
-    $is_api_key_valid = $api_key_length == CloudFlareAPI::API_KEY_LENGTH || $api_key_length == CloudflareAPI::GLOBAL_API_KEY_LENGTH;
+    $is_api_key_valid = $api_key_length == self::API_KEY_LENGTH || $api_key_length == self::GLOBAL_API_KEY_LENGTH;
     $is_api_key_alpha_numeric = ctype_alnum($this->apikey);
     $is_api_key_lower_case = !(preg_match('/[A-Z]/', $this->apikey));
 
@@ -156,7 +162,7 @@ abstract class CloudFlareAPI {
       throw new CloudFlareInvalidCredentialException('Invalid Api Key: Key can only contain alphanumeric characters.', 403);
     }
 
-    if (!$is_api_key_lower_case) {
+    if ($api_key_length == self::GLOBAL_API_KEY_LENGTH && !$is_api_key_lower_case) {
       throw new CloudFlareInvalidCredentialException('Invalid Api Key: Key can only contain lowercase or numerical characters.', 403);
     }
 
