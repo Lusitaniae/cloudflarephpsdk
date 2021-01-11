@@ -93,12 +93,18 @@ abstract class CloudFlareAPI {
    */
   public function __construct($apikey, $email, MockHandler $mock_handler = NULL) {
     $this->apikey = $apikey;
+
     $this->email = $email;
     $headers = [
-      'X-Auth-Key' => $apikey,
-      'X-Auth-Email' => $email,
       'Content-Type' => 'application/json',
     ];
+    if (strlen($apikey) === self::API_KEY_LENGTH) {
+      $headers['Authorization'] = 'Bearer ' . $apikey;
+    }
+    else {
+      $headers['X-Auth-Key'] = $apikey;
+      $headers['X-Auth-Email'] = $email;
+    }
 
     $client_params = [
       'base_uri' => self::API_ENDPOINT_BASE,
